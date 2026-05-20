@@ -1,0 +1,62 @@
+# =====================================================================
+# .gitignore — Django + Python + editores comuns
+# =====================================================================
+
+# --- Banco de dados (não versionar, contém dados locais) ---
+db.sqlite3
+db.sqlite3-journal
+*.sqlite3
+
+# --- Bytecode / caches do Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# --- Ambientes virtuais (NUNCA subir) ---
+venv/
+.venv/
+env/
+ENV/
+.env
+
+# --- Arquivos de mídia / estáticos coletados ---
+/media/
+/staticfiles/
+
+# --- Logs ---
+*.log
+logs/
+
+# --- Django runtime / chaves locais ---
+local_settings.py
+.env.local
+.env.production
+secrets.json
+
+# --- Migrations: SUBIR no Git! (não ignorar) ---
+# (intencionalmente sem entrada — migrations vão para o repositório)
+
+# --- Editores e IDEs ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# --- Cobertura / testes ---
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+
+# --- Distribuição / build ---
+build/
+dist/
+*.egg-info/
+*.egg
+
+# --- Jupyter / notebooks ---
+.ipynb_checkpoints/

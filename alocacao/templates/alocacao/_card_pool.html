@@ -1,0 +1,20 @@
+{# Cartão de turma na lista de pendentes. #}
+<div class="turma-card group relative rounded-md border px-2 py-1.5 text-xs shadow-sm {{ t.cor }}"
+     data-turma="{{ t.id }}"
+     data-alunos="{{ t.num_alunos }}"
+     data-lab="{{ t.exige_laboratorio|yesno:'1,0' }}"
+     data-titulo="{{ t.nome_disciplina }}">
+
+  <div class="absolute top-0.5 right-0.5 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+    <button type="button" class="no-drag w-5 h-5 rounded bg-white/80 hover:bg-white text-slate-700 hover:text-slate-900 flex items-center justify-center text-[11px] shadow-sm"
+            onclick="abrirEdicao({{ t.id }})" title="Editar turma">✎</button>
+    <button type="button" class="no-drag w-5 h-5 rounded bg-white/80 hover:bg-red-500 hover:text-white text-slate-700 flex items-center justify-center text-[11px] shadow-sm"
+            onclick="deletarTurma({{ t.id }}, '{{ t.nome_disciplina|escapejs }}')" title="Apagar turma">×</button>
+  </div>
+
+  <div class="font-semibold leading-tight pr-10">{{ t.nome_disciplina }}</div>
+  <div class="flex justify-between mt-0.5 text-[10px] opacity-80">
+    <span>{{ t.codigo_turma }} • {{ t.professor|default:"—" }}</span>
+    <span>{{ t.num_alunos }}{% if t.exige_laboratorio %} 💻{% endif %}</span>
+  </div>
+</div>

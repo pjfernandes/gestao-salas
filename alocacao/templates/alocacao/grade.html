@@ -1,0 +1,386 @@
+{% extends 'alocacao/base.html' %}
+{% block titulo %}Quadro de Salas — Bloco {{ bloco }}{% endblock %}
+
+{% block conteudo %}
+<div class="max-w-[1600px] mx-auto px-4 py-4">
+
+  <header class="flex flex-wrap items-end gap-4 mb-4 no-print">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Quadro de Salas</h1>
+      <p class="text-sm text-slate-500">Instituto de Geociências — UFF</p>
+    </div>
+
+    <div class="ml-auto flex flex-wrap gap-2 items-center">
+      <div class="inline-flex rounded-lg border border-slate-300 bg-white shadow-sm">
+        {% for b in 'OP' %}
+        <a href="?bloco={{ b }}&dia={{ dia }}"
+           class="px-3 py-1.5 text-sm font-medium {% if bloco == b %}bg-slate-900 text-white{% else %}text-slate-700 hover:bg-slate-50{% endif %}
+                  {% if forloop.first %}rounded-l-lg{% endif %}{% if forloop.last %}rounded-r-lg{% endif %}">
+          Bloco {{ b }}
+        </a>
+        {% endfor %}
+      </div>
+
+      <div class="inline-flex rounded-lg border border-slate-300 bg-white shadow-sm overflow-hidden">
+        {% for d, nome in dias %}
+        <a href="?bloco={{ bloco }}&dia={{ d }}"
+           class="px-3 py-1.5 text-sm font-medium border-l first:border-l-0 border-slate-200
+                  {% if dia == d %}bg-slate-900 text-white{% else %}text-slate-700 hover:bg-slate-50{% endif %}">
+          {{ nome|slice:":3" }}
+        </a>
+        {% endfor %}
+      </div>
+
+      <a href="{% url 'imprimir' %}?bloco={{ bloco }}"
+         class="px-3 py-1.5 text-sm rounded-lg border border-slate-300 bg-white hover:bg-slate-50 shadow-sm">
+        🖨 Imprimir
+      </a>
+      <a href="/admin/" class="px-3 py-1.5 text-sm rounded-lg border border-slate-300 bg-white hover:bg-slate-50 shadow-sm">
+        ⚙ Admin
+      </a>
+    </div>
+  </header>
+
+  <div class="grid grid-cols-12 gap-4">
+
+    <!-- Painel lateral -->
+    <aside class="col-span-12 lg:col-span-3 no-print">
+      <div class="bg-white rounded-lg border border-slate-200 shadow-sm">
+        <div class="px-3 py-2 border-b border-slate-200 flex items-center justify-between">
+          <h2 class="text-sm font-semibold text-slate-900">Turmas pendentes</h2>
+          <span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+            {{ pendentes|length }}
+          </span>
+        </div>
+
+        <div id="pool" class="p-2 max-h-[60vh] overflow-y-auto space-y-2 min-h-[120px]">
+          {% for t in pendentes %}
+            {% include 'alocacao/_card_pool.html' with t=t %}
+          {% empty %}
+            <p class="text-xs text-slate-400 px-2 py-4 text-center">
+              Tudo alocado! 🎉
+            </p>
+          {% endfor %}
+        </div>
+
+        <!-- + nova turma -->
+        <div class="p-2 border-t border-slate-200">
+          <details class="text-sm">
+            <summary class="cursor-pointer text-slate-700 hover:text-slate-900 px-2 py-1">
+              + adicionar turma
+            </summary>
+            <form action="{% url 'turma_criar' %}" method="post" class="mt-2 space-y-2 px-1">
+              {% csrf_token %}
+              <input name="codigo_disciplina" placeholder="Código (ex: GGE00136)" class="w-full text-xs border rounded px-2 py-1">
+              <input name="nome_disciplina" placeholder="Nome da disciplina" required class="w-full text-xs border rounded px-2 py-1">
+              <div class="flex gap-1">
+                <input name="codigo_turma" value="A1" class="w-16 text-xs border rounded px-2 py-1">
+                <input name="num_alunos" type="number" value="30" min="1" class="w-20 text-xs border rounded px-2 py-1">
+                <select name="departamento" class="flex-1 text-xs border rounded px-1 py-1">
+                  {% for code, nome in departamentos %}
+                    <option value="{{ code }}">{{ nome }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <input name="professor" placeholder="Professor" class="w-full text-xs border rounded px-2 py-1">
+              <label class="flex items-center gap-1 text-xs text-slate-700">
+                <input type="checkbox" name="exige_laboratorio"> exige laboratório
+              </label>
+              <button class="w-full bg-slate-900 text-white text-xs py-1.5 rounded hover:bg-slate-800">
+                criar turma
+              </button>
+            </form>
+          </details>
+        </div>
+
+        <!-- + nova sala -->
+        <div class="p-2 border-t border-slate-200">
+          <details class="text-sm">
+            <summary class="cursor-pointer text-slate-700 hover:text-slate-900 px-2 py-1">
+              + adicionar sala
+            </summary>
+            <form action="{% url 'sala_criar' %}" method="post" class="mt-2 space-y-2 px-1">
+              {% csrf_token %}
+              <div class="flex gap-1">
+                <input name="numero" placeholder="Nº (ex: 305)" required class="flex-1 text-xs border rounded px-2 py-1">
+                <select name="bloco" class="w-20 text-xs border rounded px-1 py-1">
+                  <option value="O">Bloco O</option>
+                  <option value="P">Bloco P</option>
+                </select>
+              </div>
+              <input name="capacidade" type="number" value="30" min="1" placeholder="Capacidade" class="w-full text-xs border rounded px-2 py-1">
+              <label class="flex items-center gap-1 text-xs text-slate-700">
+                <input type="checkbox" name="eh_laboratorio"> é laboratório
+              </label>
+              <input name="observacao" placeholder="Observação (opcional)" class="w-full text-xs border rounded px-2 py-1">
+              <button class="w-full bg-slate-900 text-white text-xs py-1.5 rounded hover:bg-slate-800">
+                criar sala
+              </button>
+              <p class="text-[10px] text-slate-500">
+                Se o nº já existir no bloco, será atualizado.
+              </p>
+            </form>
+          </details>
+        </div>
+      </div>
+
+      <p class="mt-3 text-xs text-slate-500 leading-relaxed px-1">
+        Arraste cartões para a grade.<br>
+        Passe o mouse no cartão para ver os ícones de <strong>editar</strong> ✎ e <strong>apagar</strong> ×.
+      </p>
+    </aside>
+
+    <!-- Grade principal -->
+    <main class="col-span-12 lg:col-span-9">
+      <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-slate-100 sticky top-0 z-10">
+            <tr>
+              <th class="px-2 py-2 text-left font-semibold text-slate-700 w-20 border-r border-slate-200">
+                Horário
+              </th>
+              {% for s in salas %}
+              <th class="px-2 py-2 text-center font-semibold text-slate-700 border-r border-slate-200 last:border-r-0 min-w-[140px]">
+                <div class="text-xs font-mono">{{ s.numero }}-{{ s.bloco }}</div>
+                <div class="text-[10px] font-normal text-slate-500">
+                  cap. {{ s.capacidade }}{% if s.eh_laboratorio %} • LAB{% endif %}
+                </div>
+              </th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for linha in linhas %}
+            <tr class="border-t border-slate-200">
+              <td class="px-2 py-1 text-xs font-mono text-slate-600 bg-slate-50 border-r border-slate-200 text-center">
+                {{ linha.inicio }}<br>↓<br>{{ linha.fim }}
+              </td>
+              {% for c in linha.celulas %}
+              <td class="border-r border-slate-200 last:border-r-0 p-0 align-top">
+                <div class="drop-zone min-h-[72px] p-1 space-y-1"
+                     data-sala="{{ c.sala.id }}"
+                     data-dia="{{ dia }}"
+                     data-hora-inicio="{{ linha.inicio }}"
+                     data-hora-fim="{{ linha.fim }}"
+                     data-cap="{{ c.sala.capacidade }}"
+                     data-lab="{{ c.sala.eh_laboratorio|yesno:'1,0' }}">
+                  {% for a in c.alocacoes %}
+                    {% include 'alocacao/_card_alocada.html' with a=a %}
+                  {% endfor %}
+                </div>
+              </td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        </div>
+      </div>
+
+      <p class="mt-2 text-xs text-slate-500">
+        Arraste de volta para o painel para liberar a sala. ✎ edita a disciplina • × apaga a turma toda.
+      </p>
+    </main>
+
+  </div>
+</div>
+
+<!-- ===================== MODAL DE EDIÇÃO DE TURMA ===================== -->
+<div id="modal-edicao"
+     class="hidden fixed inset-0 z-50 bg-black/40 flex items-center justify-center px-4 no-print"
+     onclick="if(event.target===this) fecharEdicao()">
+  <div class="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden">
+    <header class="px-4 py-3 border-b border-slate-200 flex justify-between items-center">
+      <h3 class="text-base font-semibold text-slate-900">Editar turma</h3>
+      <button type="button" class="text-slate-400 hover:text-slate-700 text-xl leading-none"
+              onclick="fecharEdicao()">×</button>
+    </header>
+
+    <form id="form-editar" method="post" class="p-4 space-y-3">
+      {% csrf_token %}
+      <div class="grid grid-cols-3 gap-2">
+        <div class="col-span-2">
+          <label class="text-xs font-medium text-slate-600">Código da disciplina</label>
+          <input name="codigo_disciplina" class="w-full text-sm border border-slate-300 rounded px-2 py-1.5">
+        </div>
+        <div>
+          <label class="text-xs font-medium text-slate-600">Turma</label>
+          <input name="codigo_turma" class="w-full text-sm border border-slate-300 rounded px-2 py-1.5">
+        </div>
+      </div>
+
+      <div>
+        <label class="text-xs font-medium text-slate-600">Nome da disciplina</label>
+        <input name="nome_disciplina" required class="w-full text-sm border border-slate-300 rounded px-2 py-1.5">
+      </div>
+
+      <div>
+        <label class="text-xs font-medium text-slate-600">Professor</label>
+        <input name="professor" class="w-full text-sm border border-slate-300 rounded px-2 py-1.5">
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="text-xs font-medium text-slate-600">Nº de alunos</label>
+          <input name="num_alunos" type="number" min="1" class="w-full text-sm border border-slate-300 rounded px-2 py-1.5">
+        </div>
+        <div>
+          <label class="text-xs font-medium text-slate-600">Departamento</label>
+          <select name="departamento" class="w-full text-sm border border-slate-300 rounded px-2 py-1.5">
+            {% for code, nome in departamentos %}
+              <option value="{{ code }}">{{ nome }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <label class="flex items-center gap-2 text-sm text-slate-700">
+        <input type="checkbox" name="exige_laboratorio"> exige laboratório de informática
+      </label>
+
+      <div>
+        <label class="text-xs font-medium text-slate-600">Observação</label>
+        <input name="observacao" class="w-full text-sm border border-slate-300 rounded px-2 py-1.5">
+      </div>
+
+      <footer class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+        <button type="button" onclick="fecharEdicao()"
+                class="px-3 py-1.5 text-sm rounded border border-slate-300 text-slate-700 hover:bg-slate-50">
+          Cancelar
+        </button>
+        <button type="submit"
+                class="px-3 py-1.5 text-sm rounded bg-slate-900 text-white hover:bg-slate-800">
+          Salvar
+        </button>
+      </footer>
+    </form>
+  </div>
+</div>
+
+<!-- Form invisível usado para deletar via JS -->
+<form id="form-deletar" method="post" class="hidden">
+  {% csrf_token %}
+</form>
+
+
+<script>
+// =======================================================================
+// Drag-and-drop com SortableJS
+// =======================================================================
+const grupo = 'turmas';
+
+function attachSortable(el) {
+  Sortable.create(el, {
+    group: grupo,
+    animation: 150,
+    ghostClass: 'sortable-ghost',
+    dragClass: 'sortable-drag',
+    filter: '.no-drag',          // ignora botões marcados com .no-drag
+    preventOnFilter: false,      // mantém o clique funcionando nos botões
+    onMove(evt) {
+      document.querySelectorAll('.drop-zone').forEach(d => d.classList.remove('over','invalid'));
+      const zona = evt.to;
+      if (zona && zona.classList.contains('drop-zone')) {
+        const card = evt.dragged;
+        const alunos = parseInt(card.dataset.alunos || '0', 10);
+        const exigeLab = card.dataset.lab === '1';
+        const cap = parseInt(zona.dataset.cap, 10);
+        const ehLab = zona.dataset.lab === '1';
+        const invalido = (alunos > cap) || (exigeLab && !ehLab);
+        zona.classList.add(invalido ? 'invalid' : 'over');
+      }
+    },
+    async onEnd(evt) {
+      document.querySelectorAll('.drop-zone').forEach(d => d.classList.remove('over','invalid'));
+      const card = evt.item;
+      const destino = evt.to;
+      const origem  = evt.from;
+      if (destino === origem && evt.oldIndex === evt.newIndex) return;
+
+      const turmaId    = card.dataset.turma;
+      const alocacaoId = card.dataset.alocacao || null;
+
+      if (destino.classList.contains('drop-zone')) {
+        const payload = {
+          alocacao_id: alocacaoId ? parseInt(alocacaoId,10) : null,
+          turma_id: parseInt(turmaId,10),
+          sala_id: parseInt(destino.dataset.sala,10),
+          dia: parseInt(destino.dataset.dia,10),
+          hora_inicio: destino.dataset.horaInicio,
+          hora_fim:    destino.dataset.horaFim,
+        };
+        const { ok, data } = await postJSON('/api/mover/', payload);
+        if (!ok) {
+          toast(data.erro || 'Movimento inválido.', 'erro');
+          origem.appendChild(card);
+          return;
+        }
+        card.dataset.alocacao = data.alocacao_id;
+        toast('Alocação atualizada.', 'ok');
+      } else {
+        // soltou no pool — desaloca
+        if (alocacaoId) {
+          const r = await fetch(`/api/remover/${alocacaoId}/`,
+            { method:'POST', headers:{'X-CSRFToken': csrftoken()} });
+          if (r.ok) {
+            card.removeAttribute('data-alocacao');
+            toast('Turma devolvida à lista.', 'ok');
+          } else {
+            toast('Falha ao desalocar.', 'erro');
+            origem.appendChild(card);
+          }
+        }
+      }
+    },
+  });
+}
+document.querySelectorAll('.drop-zone, #pool').forEach(attachSortable);
+
+// =======================================================================
+// Modal de edição de turma
+// =======================================================================
+async function abrirEdicao(turmaId) {
+  try {
+    const r = await fetch(`/api/turma/${turmaId}/`);
+    if (!r.ok) throw new Error('falha');
+    const t = await r.json();
+    const f = document.getElementById('form-editar');
+    f.action = `/turma/${turmaId}/editar/`;
+    f.codigo_disciplina.value = t.codigo_disciplina || '';
+    f.nome_disciplina.value   = t.nome_disciplina || '';
+    f.codigo_turma.value      = t.codigo_turma || '';
+    f.professor.value         = t.professor || '';
+    f.num_alunos.value        = t.num_alunos || 30;
+    f.departamento.value      = t.departamento || 'GGE';
+    f.exige_laboratorio.checked = !!t.exige_laboratorio;
+    f.observacao.value        = t.observacao || '';
+    document.getElementById('modal-edicao').classList.remove('hidden');
+    // foco no campo principal
+    setTimeout(() => f.nome_disciplina.focus(), 50);
+  } catch (e) {
+    toast('Não consegui carregar a turma.', 'erro');
+  }
+}
+
+function fecharEdicao() {
+  document.getElementById('modal-edicao').classList.add('hidden');
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') fecharEdicao();
+});
+
+// =======================================================================
+// Deletar turma
+// =======================================================================
+function deletarTurma(turmaId, nome) {
+  const msg = `Apagar definitivamente "${nome}"?\n\n` +
+              `Isto remove a turma e todas as alocações dela em qualquer dia/sala.`;
+  if (!confirm(msg)) return;
+  const f = document.getElementById('form-deletar');
+  f.action = `/turma/${turmaId}/deletar/`;
+  f.submit();
+}
+</script>
+{% endblock %}

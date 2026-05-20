@@ -1,0 +1,54 @@
+{% extends 'alocacao/base.html' %}
+{% block titulo %}Impressão — Bloco {{ bloco }}{% endblock %}
+
+{% block conteudo %}
+<div class="max-w-[1400px] mx-auto px-4 py-4">
+
+  <header class="flex justify-between items-center no-print mb-3">
+    <a href="{% url 'grade' %}?bloco={{ bloco }}" class="text-sm text-slate-700 hover:underline">← voltar</a>
+    <button onclick="window.print()" class="px-3 py-1.5 text-sm rounded-lg bg-slate-900 text-white hover:bg-slate-800">
+      🖨 Imprimir
+    </button>
+  </header>
+
+  {% for quadro in quadros %}
+  <section class="mb-6 page-break">
+    <h2 class="text-base font-bold mb-2 text-slate-900">
+      INSTITUTO DE GEOCIÊNCIAS — Bloco {{ bloco }} — {{ quadro.dia|upper }} — 1º Semestre 2026
+    </h2>
+    <table class="w-full border-collapse text-[10pt]">
+      <thead>
+        <tr class="bg-slate-100">
+          <th class="border border-slate-400 px-1 py-1 w-16">Hora</th>
+          {% for s in salas %}
+          <th class="border border-slate-400 px-1 py-1">
+            {{ s.numero }}-{{ s.bloco }}<br>
+            <span class="text-[8pt] font-normal">cap. {{ s.capacidade }}</span>
+          </th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for linha in quadro.linhas %}
+        <tr>
+          <td class="border border-slate-400 text-center font-mono text-[9pt] bg-slate-50">
+            {{ linha.inicio }}<br>{{ linha.fim }}
+          </td>
+          {% for c in linha.celulas %}
+          <td class="border border-slate-400 align-top p-1 min-h-[40px]">
+            {% for a in c.alocacoes %}
+            <div class="leading-tight mb-1">
+              <div class="font-semibold">{{ a.turma.nome_disciplina }}</div>
+              <div class="text-[9pt]">{{ a.turma.codigo_turma }} — {{ a.turma.professor }}</div>
+            </div>
+            {% endfor %}
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% endfor %}
+</div>
+{% endblock %}

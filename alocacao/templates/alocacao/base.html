@@ -1,0 +1,62 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>{% block titulo %}Salas IGEO{% endblock %}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+<style>
+  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .turma-card {
+    cursor: grab; user-select: none;
+    transition: transform .08s, box-shadow .08s;
+  }
+  .turma-card:active { cursor: grabbing; transform: scale(.98); }
+  .turma-card:hover  { box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+  .drop-zone.over   { background: #fef3c7 !important; outline: 2px dashed #f59e0b; }
+  .drop-zone.invalid{ background: #fee2e2 !important; outline: 2px dashed #ef4444; }
+  .sortable-ghost   { opacity: .35; }
+  .sortable-drag    { opacity: .9; transform: rotate(-2deg); }
+
+  /* impressão */
+  @media print {
+    .no-print { display: none !important; }
+    body { font-size: 10pt; }
+    .page-break { page-break-after: always; }
+  }
+</style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+{% block conteudo %}{% endblock %}
+
+<div id="toast" class="hidden no-print fixed bottom-6 right-6 max-w-sm px-4 py-3 rounded-lg shadow-lg text-sm"></div>
+
+<script>
+  function toast(msg, tipo='info') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'no-print fixed bottom-6 right-6 max-w-sm px-4 py-3 rounded-lg shadow-lg text-sm ' +
+      (tipo === 'erro'  ? 'bg-red-600 text-white' :
+       tipo === 'ok'    ? 'bg-emerald-600 text-white' :
+                          'bg-slate-800 text-white');
+    t.classList.remove('hidden');
+    clearTimeout(window.__toast_t);
+    window.__toast_t = setTimeout(() => t.classList.add('hidden'), 3200);
+  }
+  function csrftoken() {
+    const m = document.cookie.match(/csrftoken=([^;]+)/);
+    return m ? m[1] : '';
+  }
+  async function postJSON(url, payload) {
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrftoken()},
+      body: JSON.stringify(payload),
+    });
+    return { ok: r.ok, data: await r.json().catch(()=>({})) };
+  }
+</script>
+</body>
+</html>
