@@ -1,18 +1,19 @@
 {# Cartão de turma já alocada em uma célula da grade. #}
 <div class="turma-card group relative rounded-md border px-2 py-1 text-xs shadow-sm {{ a.turma.cor }}"
-     data-turma="{{ a.turma.id }}"
-     data-alocacao="{{ a.id }}"
-     data-alunos="{{ a.turma.num_alunos }}"
-     data-lab="{{ a.turma.exige_laboratorio|yesno:'1,0' }}"
-     data-titulo="{{ a.turma.nome_disciplina }}"
-     title="{{ a.turma.nome_disciplina }} — {{ a.turma.professor }}">
+  data-turma="{{ a.turma.id }}" data-alocacao="{{ a.id }}" data-alunos="{{ a.turma.num_alunos }}"
+  data-lab="{{ a.turma.exige_laboratorio|yesno:'1,0' }}" data-titulo="{{ a.turma.nome_disciplina }}"
+  title="{{ a.turma.nome_disciplina }} — {{ a.turma.professor }}">
 
+  {% if pode_editar %}
   <div class="absolute top-0.5 right-0.5 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-    <button type="button" class="no-drag w-5 h-5 rounded bg-white/80 hover:bg-white text-slate-700 hover:text-slate-900 flex items-center justify-center text-[11px] shadow-sm"
-            onclick="abrirEdicao({{ a.turma.id }})" title="Editar turma">✎</button>
-    <button type="button" class="no-drag w-5 h-5 rounded bg-white/80 hover:bg-red-500 hover:text-white text-slate-700 flex items-center justify-center text-[11px] shadow-sm"
-            onclick="deletarTurma({{ a.turma.id }}, '{{ a.turma.nome_disciplina|escapejs }}')" title="Apagar turma">×</button>
+    <button type="button"
+      class="no-drag w-5 h-5 rounded bg-white/80 hover:bg-white text-slate-700 hover:text-slate-900 flex items-center justify-center text-[11px] shadow-sm"
+      onclick="abrirEdicao({{ a.turma.id }})" title="Editar turma">✎</button>
+    <button type="button"
+      class="no-drag w-5 h-5 rounded bg-white/80 hover:bg-red-500 hover:text-white text-slate-700 flex items-center justify-center text-[11px] shadow-sm"
+      onclick="deletarTurma({{ a.turma.id }}, '{{ a.turma.nome_disciplina|escapejs }}')" title="Apagar turma">×</button>
   </div>
+  {% endif %}
 
   <div class="font-semibold leading-tight truncate pr-10">{{ a.turma.nome_disciplina }}</div>
   <div class="aloc-meta text-[10px] opacity-80 flex justify-between">

@@ -61,3 +61,8 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Autenticação — rotas de login/logout
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'grade'
+LOGOUT_REDIRECT_URL = 'grade'

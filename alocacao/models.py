@@ -16,6 +16,7 @@ DIAS_SEMANA = [
     (3, 'Quarta-feira'),
     (4, 'Quinta-feira'),
     (5, 'Sexta-feira'),
+    (6, 'Sábado'),
 ]
 
 # Faixas de horário usadas pelo Instituto (espelho do quadro em papel).

@@ -1,13 +1,31 @@
 """Views: grade interativa + APIs simples para drag-and-drop + impressão."""
 import json
+from functools import wraps
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.views.decorators.http import require_POST, require_GET
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 
 from .models import Sala, Turma, Alocacao, DIAS_SEMANA, FAIXAS_HORARIO
 
+
+def api_login_required(view):
+    """Como @login_required, mas devolve JSON 403 em vez de redirecionar.
+
+    Usado nos endpoints de API (chamados via fetch/AJAX), onde um redirect
+    para a tela de login quebraria o JavaScript.
+    """
+    @wraps(view)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return JsonResponse(
+                {'ok': False, 'erro': 'Faça login para editar o quadro.'},
+                status=403,
+            )
+        return view(request, *args, **kwargs)
+    return wrapper
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -29,9 +47,6 @@ def _validar_alocacao(turma, sala, dia, hora_inicio, hora_fim, ignorar_id=None):
             f'mas a turma tem {turma.num_alunos}.'
         )
 
-    if turma.exige_laboratorio and not sala.eh_laboratorio:
-        return False, 'Esta turma exige laboratório de informática.'
-
     conflitantes = Alocacao.objects.filter(sala=sala, dia_semana=dia)
     if ignorar_id:
         conflitantes = conflitantes.exclude(pk=ignorar_id)
@@ -43,7 +58,6 @@ def _validar_alocacao(turma, sala, dia, hora_inicio, hora_fim, ignorar_id=None):
             )
 
     return True, ''
-
 
 def _sugerir_sala(turma, dia, hora_inicio, hora_fim, bloco=None):
     qs = Sala.objects.all()
@@ -104,6 +118,7 @@ def grade(request):
         'sem_sala': sem_sala,
         'faixas': FAIXAS_HORARIO,
         'departamentos': Turma.DEPARTAMENTOS,
+        'pode_editar': request.user.is_authenticated,
     })
 
 
@@ -142,6 +157,7 @@ def imprimir(request):
 # APIs (JSON) — drag-and-drop
 # ---------------------------------------------------------------------------
 
+@api_login_required
 @require_POST
 def api_mover(request):
     try:
@@ -181,6 +197,7 @@ def api_mover(request):
     return JsonResponse({'ok': True, 'alocacao_id': aloc.id})
 
 
+@api_login_required
 @require_POST
 def api_remover(request, pk):
     aloc = get_object_or_404(Alocacao, pk=pk)
@@ -188,6 +205,7 @@ def api_remover(request, pk):
     return JsonResponse({'ok': True})
 
 
+@api_login_required
 @require_POST
 def api_sugerir(request):
     try:
@@ -216,6 +234,7 @@ def api_sugerir(request):
 # Turma — criar, ver, editar, deletar
 # ---------------------------------------------------------------------------
 
+@login_required
 @require_POST
 def turma_criar(request):
     Turma.objects.create(
@@ -231,6 +250,7 @@ def turma_criar(request):
     return redirect(request.META.get('HTTP_REFERER', 'grade'))
 
 
+@api_login_required
 @require_GET
 def api_turma_detalhe(request, pk):
     """Devolve dados de uma turma em JSON — usado pelo modal de edição."""
@@ -248,6 +268,7 @@ def api_turma_detalhe(request, pk):
     })
 
 
+@login_required
 @require_POST
 def turma_editar(request, pk):
     """Edita uma turma via form normal e volta para a grade."""
@@ -279,6 +300,7 @@ def turma_editar(request, pk):
     return redirect(request.META.get('HTTP_REFERER', 'grade'))
 
 
+@login_required
 @require_POST
 def turma_deletar(request, pk):
     """Apaga a turma e, em cascata, todas as suas alocações."""
@@ -291,6 +313,7 @@ def turma_deletar(request, pk):
 # Sala — criar
 # ---------------------------------------------------------------------------
 
+@login_required
 @require_POST
 def sala_criar(request):
     numero = request.POST.get('numero', '').strip()
