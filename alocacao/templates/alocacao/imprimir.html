@@ -12,18 +12,17 @@
   </header>
 
   {% for quadro in quadros %}
-  <section class="mb-6 page-break">
-    <h2 class="text-base font-bold mb-2 text-slate-900">
+  <section class="mb-6 quadro-print">
+    <h2 class="text-base font-bold mb-2 text-slate-900 text-center">
       INSTITUTO DE GEOCIÊNCIAS — Bloco {{ bloco }} — {{ quadro.dia|upper }} — 1º Semestre 2026
     </h2>
-    <table class="w-full border-collapse text-[10pt]">
+    <table class="w-full border-collapse text-[10pt] table-fixed">
       <thead>
-        <tr class="bg-slate-100">
-          <th class="border border-slate-400 px-1 py-1 w-16">Hora</th>
+        <tr class="bg-slate-200">
+          <th class="border border-slate-400 px-1 py-1 w-20 text-center">Hora</th>
           {% for s in salas %}
-          <th class="border border-slate-400 px-1 py-1">
-            {{ s.numero }}-{{ s.bloco }}<br>
-            <span class="text-[8pt] font-normal">cap. {{ s.capacidade }}</span>
+          <th class="border border-slate-400 px-1 py-1 text-center">
+            {{ s.numero }}-{{ s.bloco }}
           </th>
           {% endfor %}
         </tr>
@@ -31,15 +30,15 @@
       <tbody>
         {% for linha in quadro.linhas %}
         <tr>
-          <td class="border border-slate-400 text-center font-mono text-[9pt] bg-slate-50">
+          <td class="border border-slate-400 text-center font-mono text-[9pt] bg-slate-200">
             {{ linha.inicio }}<br>{{ linha.fim }}
           </td>
           {% for c in linha.celulas %}
-          <td class="border border-slate-400 align-top p-1 min-h-[40px]">
+          <td class="border border-slate-400 align-middle text-center p-1">
             {% for a in c.alocacoes %}
             <div class="leading-tight mb-1">
-              <div class="font-semibold">{{ a.turma.nome_disciplina }}</div>
-              <div class="text-[9pt]">{{ a.turma.codigo_turma }} — {{ a.turma.professor }}</div>
+              <div class="font-semibold hyphens-auto">{{ a.turma.nome_disciplina }}</div>
+              <div class="text-[9pt] break-words">{{ a.turma.codigo_turma }} — {{ a.turma.professor }}</div>
             </div>
             {% endfor %}
           </td>

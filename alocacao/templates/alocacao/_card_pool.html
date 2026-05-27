@@ -1,7 +1,10 @@
-{# Cartão de turma na lista de pendentes. #}
 <div class="turma-card group relative rounded-md border px-2 py-1.5 text-xs shadow-sm {{ t.cor }}"
   data-turma="{{ t.id }}" data-alunos="{{ t.num_alunos }}" data-lab="{{ t.exige_laboratorio|yesno:'1,0' }}"
   data-titulo="{{ t.nome_disciplina }}">
+
+  {# contador de encontros já alocados (canto superior esquerdo) #}
+  <span class="contador absolute top-0.5 left-0.5 px-1 rounded bg-black/15 text-[10px] font-semibold leading-tight"
+    data-count="{{ t.n_aloc }}" {% if not t.n_aloc %}style="display:none" {% endif %}>{{ t.n_aloc }}×</span>
 
   {% if pode_editar %}
   <div class="absolute top-0.5 right-0.5 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -14,7 +17,7 @@
   </div>
   {% endif %}
 
-  <div class="font-semibold leading-tight pr-10">{{ t.nome_disciplina }}</div>
+  <div class="font-semibold leading-tight pr-10 pl-4">{{ t.nome_disciplina }}</div>
   <div class="flex justify-between mt-0.5 text-[10px] opacity-80">
     <span>{{ t.codigo_turma }} • {{ t.professor|default:"—" }}</span>
     <span>{{ t.num_alunos }}{% if t.exige_laboratorio %} 💻{% endif %}</span>

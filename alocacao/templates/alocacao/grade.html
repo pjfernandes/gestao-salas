@@ -32,14 +32,12 @@
         {% endfor %}
       </div>
 
+      {% if pode_editar %}
       <a href="{% url 'imprimir' %}?bloco={{ bloco }}"
         class="px-3 py-1.5 text-sm rounded-lg border border-slate-300 bg-white hover:bg-slate-50 shadow-sm">
         🖨 Imprimir
       </a>
-
-      {% if pode_editar %}
-      <a href="/admin/"
-        class="px-3 py-1.5 text-sm rounded-lg border border-slate-300 bg-white hover:bg-slate-50 shadow-sm">
+      <a href="/admin/" class="px-3 py-1.5 text-sm rounded-lg border border-slate-300 bg-white hover:bg-slate-50 shadow-sm">
         ⚙ Admin
       </a>
       <form action="{% url 'logout' %}" method="post" class="inline">
@@ -64,7 +62,7 @@
     <aside class="col-span-12 lg:col-span-3 no-print">
       <div class="bg-white rounded-lg border border-slate-200 shadow-sm">
         <div class="px-3 py-2 border-b border-slate-200 flex items-center justify-between">
-          <h2 class="text-sm font-semibold text-slate-900">Turmas pendentes</h2>
+          <h2 class="text-sm font-semibold text-slate-900">Disciplinas</h2>
           <span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
             {{ pendentes|length }}
           </span>
@@ -75,7 +73,7 @@
           {% include 'alocacao/_card_pool.html' with t=t %}
           {% empty %}
           <p class="text-xs text-slate-400 px-2 py-4 text-center">
-            Tudo alocado! 🎉
+            Nenhuma disciplina cadastrada.
           </p>
           {% endfor %}
         </div>
@@ -147,8 +145,10 @@
       </div>
 
       <p class="mt-3 text-xs text-slate-500 leading-relaxed px-1">
-        Arraste cartões para a grade.<br>
-        Passe o mouse no cartão para ver os ícones de <strong>editar</strong> ✎ e <strong>apagar</strong> ×.
+        Cada disciplina fica <strong>sempre disponível</strong> aqui — arraste o mesmo
+        card quantas vezes precisar (um por dia/horário). O número à esquerda mostra
+        quantos encontros já foram alocados.<br>
+        Arraste um encontro de volta para esta lista para removê-lo.
       </p>
     </aside>
     {% endif %}
@@ -176,15 +176,15 @@
             </thead>
             <tbody>
               {% for linha in linhas %}
-              <tr class="border-t border-slate-200">
+              <tr>
                 <td
-                  class="px-2 py-1 text-xs font-mono text-slate-600 bg-slate-50 border-r border-slate-200 text-center">
+                  class="px-2 py-1 text-xs font-mono text-slate-600 bg-slate-50 border-r border-t border-slate-200 text-center">
                   {{ linha.inicio }}<br>↓<br>{{ linha.fim }}
                 </td>
                 {% for c in linha.celulas %}
-                <td class="border-r border-slate-200 last:border-r-0 p-0 align-top">
-                  <div class="drop-zone min-h-[72px] p-1 space-y-1" data-sala="{{ c.sala.id }}" data-dia="{{ dia }}"
-                    data-hora-inicio="{{ linha.inicio }}" data-hora-fim="{{ linha.fim }}"
+                  <td class="border-r border-t border-slate-200 last:border-r-0 p-0 align-top">
+                    <div class="drop-zone min-h-[72px] p-1 space-y-1" data-sala="{{ c.sala.id }}"
+                    data-dia="{{ dia }}" data-hora-inicio="{{ linha.inicio }}" data-hora-fim="{{ linha.fim }}"
                     data-cap="{{ c.sala.capacidade }}" data-lab="{{ c.sala.eh_laboratorio|yesno:'1,0' }}">
                     {% for a in c.alocacoes %}
                     {% include 'alocacao/_card_alocada.html' with a=a %}
@@ -201,7 +201,8 @@
 
       {% if pode_editar %}
       <p class="mt-2 text-xs text-slate-500">
-        Arraste de volta para o painel para liberar a sala. ✎ edita a disciplina • × apaga a turma toda.
+        Faixas seguidas da mesma turma aparecem como um bloco único. Arraste um encontro
+        de volta ao painel para liberar a sala. ✎ edita a disciplina • × apaga a turma toda.
       </p>
       {% else %}
       <p class="mt-2 text-xs text-slate-500">
@@ -294,7 +295,20 @@
 
 <script>
   // =======================================================================
-  // Drag-and-drop com SortableJS (só carrega para usuários logados)
+  // Contador de encontros no card do painel
+  // =======================================================================
+  function ajustarContador(turmaId, delta) {
+    const badge = document.querySelector(`#pool [data-turma="${turmaId}"] .contador`);
+    if (!badge) return;
+    let n = parseInt(badge.dataset.count || '0', 10) + delta;
+    if (n < 0) n = 0;
+    badge.dataset.count = n;
+    badge.textContent = n + '×';
+    badge.style.display = n > 0 ? '' : 'none';
+  }
+
+  // =======================================================================
+  // Drag-and-drop com SortableJS
   // =======================================================================
   const grupo = 'turmas';
 
@@ -312,10 +326,8 @@
         if (zona && zona.classList.contains('drop-zone')) {
           const card = evt.dragged;
           const alunos = parseInt(card.dataset.alunos || '0', 10);
-          const exigeLab = card.dataset.lab === '1';
           const cap = parseInt(zona.dataset.cap, 10);
-          const ehLab = zona.dataset.lab === '1';
-          const invalido = (alunos > cap) || (exigeLab && !ehLab);
+          const invalido = (alunos > cap);
           zona.classList.add(invalido ? 'invalid' : 'over');
         }
       },
@@ -324,41 +336,78 @@
         const card = evt.item;
         const destino = evt.to;
         const origem = evt.from;
+
+        const origemEhPool = origem.id === 'pool';
+        const destinoEhPool = destino.id === 'pool';
+        const destinoEhGrade = destino.classList.contains('drop-zone');
+
+        // reordenar dentro do painel ou nada mudou -> ignora
+        if (origemEhPool && destinoEhPool) return;
         if (destino === origem && evt.oldIndex === evt.newIndex) return;
 
-        const turmaId = card.dataset.turma;
-        const alocacaoId = card.dataset.alocacao || null;
+        const turmaId = parseInt(card.dataset.turma, 10);
+        const alocacaoId = card.dataset.alocacao ? parseInt(card.dataset.alocacao, 10) : null;
 
-        if (destino.classList.contains('drop-zone')) {
-          const payload = {
-            alocacao_id: alocacaoId ? parseInt(alocacaoId, 10) : null,
-            turma_id: parseInt(turmaId, 10),
+        // -------- PAINEL -> GRADE : cria um novo encontro --------
+        if (origemEhPool && destinoEhGrade) {
+          // devolve uma cópia "modelo" ao painel (o card é reutilizável)
+          const copia = card.cloneNode(true);
+          copia.removeAttribute('data-alocacao');
+          origem.appendChild(copia);
+
+          const { ok, data } = await postJSON('/api/mover/', {
+            alocacao_id: null,
+            turma_id: turmaId,
             sala_id: parseInt(destino.dataset.sala, 10),
             dia: parseInt(destino.dataset.dia, 10),
             hora_inicio: destino.dataset.horaInicio,
             hora_fim: destino.dataset.horaFim,
-          };
-          const { ok, data } = await postJSON('/api/mover/', payload);
+          });
           if (!ok) {
             toast(data.erro || 'Movimento inválido.', 'erro');
-            origem.appendChild(card);
+            card.remove();                          // o painel já tem a cópia
+            return;
+          }
+          card.dataset.alocacao = data.alocacao_id;
+          card.querySelector('.contador')?.remove(); // badge é só do painel
+          ajustarContador(turmaId, +1);
+          toast('Encontro adicionado.', 'ok');
+          return;
+        }
+
+        // -------- GRADE -> GRADE : move o encontro --------
+        if (destinoEhGrade) {
+          const { ok, data } = await postJSON('/api/mover/', {
+            alocacao_id: alocacaoId,
+            turma_id: turmaId,
+            sala_id: parseInt(destino.dataset.sala, 10),
+            dia: parseInt(destino.dataset.dia, 10),
+            hora_inicio: destino.dataset.horaInicio,
+            hora_fim: destino.dataset.horaFim,
+          });
+          if (!ok) {
+            toast(data.erro || 'Movimento inválido.', 'erro');
+            origem.appendChild(card);               // rollback
             return;
           }
           card.dataset.alocacao = data.alocacao_id;
           toast('Alocação atualizada.', 'ok');
-        } else {
-          // soltou no pool — desaloca
-          if (alocacaoId) {
-            const r = await fetch(`/api/remover/${alocacaoId}/`,
-              { method: 'POST', headers: { 'X-CSRFToken': csrftoken() } });
-            if (r.ok) {
-              card.removeAttribute('data-alocacao');
-              toast('Turma devolvida à lista.', 'ok');
-            } else {
-              toast('Falha ao desalocar.', 'erro');
-              origem.appendChild(card);
-            }
+          return;
+        }
+
+        // -------- GRADE -> PAINEL : remove o encontro --------
+        if (destinoEhPool && alocacaoId) {
+          const r = await fetch(`/api/remover/${alocacaoId}/`,
+            { method: 'POST', headers: { 'X-CSRFToken': csrftoken() } });
+          if (r.ok) {
+            card.remove();                          // some (o modelo continua no painel)
+            ajustarContador(turmaId, -1);
+            toast('Encontro removido.', 'ok');
+          } else {
+            toast('Falha ao remover.', 'erro');
+            origem.appendChild(card);               // rollback para a grade
           }
+          return;
         }
       },
     });

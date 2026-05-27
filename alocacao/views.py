@@ -103,10 +103,11 @@ def grade(request):
             })
         linhas.append({'inicio': ini, 'fim': fim, 'celulas': celulas})
 
-    pendentes = Turma.objects.filter(alocacoes__isnull=True).distinct()
-    sem_sala = (Alocacao.objects
-                .filter(sala__isnull=True)
-                .select_related('turma'))
+    # Painel mostra TODAS as turmas (reutilizáveis), com nº de encontros já alocados.
+    from django.db.models import Count
+    turmas_painel = (Turma.objects
+                     .annotate(n_aloc=Count('alocacoes'))
+                     .order_by('departamento', 'nome_disciplina', 'codigo_turma'))
 
     return render(request, 'alocacao/grade.html', {
         'bloco': bloco,
@@ -114,14 +115,14 @@ def grade(request):
         'dias': DIAS_SEMANA,
         'salas': salas,
         'linhas': linhas,
-        'pendentes': pendentes,
-        'sem_sala': sem_sala,
+        'pendentes': turmas_painel,
         'faixas': FAIXAS_HORARIO,
         'departamentos': Turma.DEPARTAMENTOS,
         'pode_editar': request.user.is_authenticated,
     })
 
 
+@login_required
 def imprimir(request):
     bloco = request.GET.get('bloco', 'O')
     salas = list(Sala.objects.filter(bloco=bloco))
