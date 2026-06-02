@@ -20,6 +20,16 @@
   .sortable-ghost   { opacity: .35; }
   .sortable-drag    { opacity: .9; transform: rotate(-2deg); }
 
+/* destaque ao "localizar" uma alocacao vinda do balao */
+  .destacar-aloc {
+    outline: 3px solid #2563eb; outline-offset: 1px; border-radius: .375rem;
+    animation: pulseAloc 1.1s ease-out 2;
+  }
+  @keyframes pulseAloc {
+    0%   { box-shadow: 0 0 0 0 rgba(37,99,235,.55); }
+    100% { box-shadow: 0 0 0 12px rgba(37,99,235,0); }
+  }
+
 /* impressão */
   @media print {
     @page { size: A4 landscape; margin: 1cm; }

@@ -1,6 +1,7 @@
 <div class="turma-card group relative rounded-md border px-2 py-1.5 text-xs shadow-sm {{ t.cor }}"
   data-turma="{{ t.id }}" data-alunos="{{ t.num_alunos }}" data-lab="{{ t.exige_laboratorio|yesno:'1,0' }}"
-  data-titulo="{{ t.nome_disciplina }}">
+  data-titulo="{{ t.nome_disciplina }}"
+  data-busca="{{ t.nome_disciplina }} {{ t.codigo_disciplina }} {{ t.codigo_turma }} {{ t.professor }}">
 
   {# contador de encontros já alocados (canto superior esquerdo) #}
   <span class="contador absolute top-0.5 left-0.5 px-1 rounded bg-black/15 text-[10px] font-semibold leading-tight"

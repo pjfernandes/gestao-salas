@@ -109,6 +109,22 @@ def grade(request):
                      .annotate(n_aloc=Count('alocacoes'))
                      .order_by('departamento', 'nome_disciplina', 'codigo_turma'))
 
+    # Mapa turma -> lista de alocacoes (alimenta o balao "localizar no quadro").
+    dias_nome = dict(DIAS_SEMANA)
+    aloc_por_turma = {}
+    for a in (Alocacao.objects
+              .select_related('sala')
+              .order_by('dia_semana', 'hora_inicio')):
+        aloc_por_turma.setdefault(a.turma_id, []).append({
+            'id': a.id,
+            'dia': a.dia_semana,
+            'dia_nome': dias_nome.get(a.dia_semana, ''),
+            'bloco': a.sala.bloco if a.sala else None,
+            'sala': (f'{a.sala.numero}-{a.sala.bloco}' if a.sala else 'sem sala'),
+            'hora_inicio': a.hora_inicio,
+            'hora_fim': a.hora_fim,
+        })
+
     return render(request, 'alocacao/grade.html', {
         'bloco': bloco,
         'dia': dia,
@@ -119,6 +135,7 @@ def grade(request):
         'faixas': FAIXAS_HORARIO,
         'departamentos': Turma.DEPARTAMENTOS,
         'pode_editar': request.user.is_authenticated,
+        'aloc_por_turma': aloc_por_turma,
     })
 
 

@@ -68,6 +68,18 @@
           </span>
         </div>
 
+        <!-- busca de disciplinas -->
+        <div class="px-2 pt-2">
+          <div class="relative">
+            <input id="busca-disc" type="text" placeholder="Buscar disciplina…" autocomplete="off"
+              class="w-full text-xs border border-slate-300 rounded pl-7 pr-6 py-1.5 focus:outline-none focus:ring-2 focus:ring-slate-300">
+            <span class="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs">🔎</span>
+            <button type="button" id="busca-limpar"
+              class="hidden absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 text-sm leading-none">×</button>
+          </div>
+          <p id="busca-vazia" class="hidden text-[11px] text-slate-400 px-1 pt-2">Nenhuma disciplina encontrada.</p>
+        </div>
+
         <div id="pool" class="p-2 max-h-[60vh] overflow-y-auto space-y-2 min-h-[120px]">
           {% for t in pendentes %}
           {% include 'alocacao/_card_pool.html' with t=t %}
@@ -201,8 +213,7 @@
 
       {% if pode_editar %}
       <p class="mt-2 text-xs text-slate-500">
-        Faixas seguidas da mesma turma aparecem como um bloco único. Arraste um encontro
-        de volta ao painel para liberar a sala. ✎ edita a disciplina • × apaga a turma toda.
+        Arraste uma disciplina de volta ao painel para liberar a sala. ✎ edita a disciplina • × apaga a turma toda.
       </p>
       {% else %}
       <p class="mt-2 text-xs text-slate-500">
@@ -216,6 +227,14 @@
 </div>
 
 {% if pode_editar %}
+<!-- dados das alocacoes por turma (alimenta o balao) -->
+{{ aloc_por_turma|json_script:"aloc-data" }}
+
+<!-- balao com as alocacoes da disciplina -->
+<div id="aloc-pop"
+  class="hidden fixed z-50 w-60 bg-white rounded-lg border border-slate-200 shadow-xl text-slate-800 overflow-hidden">
+</div>
+
 <!-- ===================== MODAL DE EDIÇÃO DE TURMA ===================== -->
 <div id="modal-edicao" class="hidden fixed inset-0 z-50 bg-black/40 flex items-center justify-center px-4 no-print"
   onclick="if(event.target===this) fecharEdicao()">
@@ -295,6 +314,152 @@
 
 <script>
   // =======================================================================
+  // Visao atual + dados de alocacoes (balao "localizar no quadro")
+  // =======================================================================
+  const VIEW = { bloco: "{{ bloco }}", dia: {{ dia }} };
+  let ALOC = {};
+  try { ALOC = JSON.parse(document.getElementById('aloc-data').textContent || '{}'); }
+  catch (e) { ALOC = {}; }
+  let arrastando = false;
+
+  function alocacoesDaTurma(id) {
+    return ALOC[id] || ALOC[String(id)] || [];
+  }
+
+  // -----------------------------------------------------------------------
+  // Busca de disciplinas no painel
+  // -----------------------------------------------------------------------
+  function aplicarBusca() {
+    const campo = document.getElementById('busca-disc');
+    if (!campo) return;
+    const q = campo.value.trim().toLowerCase();
+    let visiveis = 0;
+    document.querySelectorAll('#pool .turma-card').forEach(card => {
+      const alvo = (card.dataset.busca || card.dataset.titulo || '').toLowerCase();
+      const mostra = !q || alvo.includes(q);
+      card.style.display = mostra ? '' : 'none';
+      if (mostra) visiveis++;
+    });
+    const vazio = document.getElementById('busca-vazia');
+    if (vazio) vazio.classList.toggle('hidden', visiveis !== 0);
+    const limpar = document.getElementById('busca-limpar');
+    if (limpar) limpar.classList.toggle('hidden', q === '');
+  }
+  (function initBusca() {
+    const campo = document.getElementById('busca-disc');
+    const limpar = document.getElementById('busca-limpar');
+    if (campo) campo.addEventListener('input', aplicarBusca);
+    if (limpar) limpar.addEventListener('click', () => {
+      campo.value = ''; aplicarBusca(); campo.focus();
+    });
+  })();
+
+  // -----------------------------------------------------------------------
+  // Balao com as alocacoes da disciplina + "localizar no quadro"
+  // -----------------------------------------------------------------------
+  const pop = document.getElementById('aloc-pop');
+  let popCard = null, popTimer = null;
+
+  function fecharPop() { if (pop) pop.classList.add('hidden'); popCard = null; }
+  function agendarFechar() { clearTimeout(popTimer); popTimer = setTimeout(fecharPop, 180); }
+  function cancelarFechar() { clearTimeout(popTimer); }
+
+  function montarPop(card) {
+    const lista = alocacoesDaTurma(card.dataset.turma);
+    if (!lista.length) return false;
+    const nome = card.dataset.titulo || 'Disciplina';
+    let html = '<div class="px-3 py-2 border-b border-slate-200 text-xs font-semibold text-slate-800">'
+      + nome + '</div><div class="py-1 max-h-64 overflow-y-auto">';
+    for (const a of lista) {
+      const aqui = (a.bloco === VIEW.bloco && a.dia === VIEW.dia);
+      const navegavel = !!a.bloco;
+      const cls = navegavel
+        ? 'aloc-link w-full text-left px-3 py-1.5 text-xs hover:bg-slate-100 flex items-center gap-2 cursor-pointer'
+        : 'w-full text-left px-3 py-1.5 text-xs flex items-center gap-2 text-slate-400';
+      html += '<button type="button" class="' + cls + '"'
+        + ' data-id="' + a.id + '" data-bloco="' + (a.bloco || '') + '" data-dia="' + a.dia + '">'
+        + '<span class="font-mono text-slate-500 w-7">' + a.dia_nome.slice(0, 3) + '</span>'
+        + '<span class="font-mono whitespace-nowrap">' + a.hora_inicio + '–' + a.hora_fim + '</span>'
+        + '<span class="ml-auto px-1.5 rounded bg-slate-200 text-slate-700 whitespace-nowrap">' + a.sala + '</span>'
+        + (aqui ? '<span class="text-blue-600" title="neste quadro">•</span>' : '')
+        + '</button>';
+    }
+    html += '</div><div class="px-3 py-1.5 text-[10px] text-slate-400 border-t border-slate-100">clique p/ localizar no quadro</div>';
+    pop.innerHTML = html;
+    return true;
+  }
+
+  function posicionarPop(card) {
+    const r = card.getBoundingClientRect();
+    pop.style.visibility = 'hidden';
+    pop.classList.remove('hidden');
+    const pw = pop.offsetWidth, ph = pop.offsetHeight;
+    let left = r.right + 8;
+    if (left + pw > window.innerWidth - 8) left = r.left - pw - 8;
+    if (left < 8) left = 8;
+    let top = r.top;
+    if (top + ph > window.innerHeight - 8) top = Math.max(8, window.innerHeight - ph - 8);
+    pop.style.left = left + 'px';
+    pop.style.top = top + 'px';
+    pop.style.visibility = '';
+  }
+
+  function abrirPop(card) {
+    if (arrastando || !pop) return;
+    if (!montarPop(card)) { fecharPop(); return; }
+    popCard = card;
+    posicionarPop(card);
+  }
+
+  function destacarAlocacao(id) {
+    const el = document.querySelector('.drop-zone [data-alocacao="' + id + '"]');
+    if (!el) { toast('Essa alocação não está neste quadro.', 'erro'); return; }
+    el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+    el.classList.add('destacar-aloc');
+    setTimeout(() => el.classList.remove('destacar-aloc'), 2400);
+  }
+
+  (function initPop() {
+    const poolEl = document.getElementById('pool');
+    if (!poolEl || !pop) return;
+    poolEl.addEventListener('pointerover', e => {
+      const card = e.target.closest('.turma-card');
+      if (!card || !poolEl.contains(card)) return;
+      if (popCard === card) { cancelarFechar(); return; }
+      cancelarFechar();
+      abrirPop(card);
+    });
+    poolEl.addEventListener('pointerout', e => {
+      const card = e.target.closest('.turma-card');
+      if (!card) return;
+      const indo = e.relatedTarget;
+      if (indo && (pop.contains(indo) || card.contains(indo))) return;
+      agendarFechar();
+    });
+    pop.addEventListener('pointerenter', cancelarFechar);
+    pop.addEventListener('pointerleave', agendarFechar);
+    pop.addEventListener('click', e => {
+      const link = e.target.closest('.aloc-link');
+      if (!link) return;
+      const id = link.dataset.id;
+      const bloco = link.dataset.bloco;
+      const dia = parseInt(link.dataset.dia, 10);
+      fecharPop();
+      if (bloco === VIEW.bloco && dia === VIEW.dia) {
+        destacarAlocacao(id);
+      } else {
+        window.location.href = '?bloco=' + bloco + '&dia=' + dia + '#aloc-' + id;
+      }
+    });
+  })();
+
+  // ao chegar via link com #aloc-<id>, destaca a alocacao apos carregar
+  window.addEventListener('load', () => {
+    const m = (location.hash || '').match(/^#aloc-(\d+)$/);
+    if (m) setTimeout(() => destacarAlocacao(m[1]), 300);
+  });
+
+  // =======================================================================
   // Contador de encontros no card do painel
   // =======================================================================
   function ajustarContador(turmaId, delta) {
@@ -320,6 +485,7 @@
       dragClass: 'sortable-drag',
       filter: '.no-drag',          // ignora botões marcados com .no-drag
       preventOnFilter: false,      // mantém o clique funcionando nos botões
+      onStart() { arrastando = true; fecharPop(); },
       onMove(evt) {
         document.querySelectorAll('.drop-zone').forEach(d => d.classList.remove('over', 'invalid'));
         const zona = evt.to;
@@ -332,6 +498,7 @@
         }
       },
       async onEnd(evt) {
+        arrastando = false;
         document.querySelectorAll('.drop-zone').forEach(d => d.classList.remove('over', 'invalid'));
         const card = evt.item;
         const destino = evt.to;
@@ -350,10 +517,12 @@
 
         // -------- PAINEL -> GRADE : cria um novo encontro --------
         if (origemEhPool && destinoEhGrade) {
-          // devolve uma cópia "modelo" ao painel (o card é reutilizável)
+          // devolve uma cópia "modelo" ao painel, na MESMA posição (não no fim)
           const copia = card.cloneNode(true);
           copia.removeAttribute('data-alocacao');
-          origem.appendChild(copia);
+          const ref = origem.children[evt.oldIndex] || null;
+          origem.insertBefore(copia, ref);
+          aplicarBusca();
 
           const { ok, data } = await postJSON('/api/mover/', {
             alocacao_id: null,
@@ -371,7 +540,7 @@
           card.dataset.alocacao = data.alocacao_id;
           card.querySelector('.contador')?.remove(); // badge é só do painel
           ajustarContador(turmaId, +1);
-          toast('Encontro adicionado.', 'ok');
+          toast('Disciplina adicionada.', 'ok');
           return;
         }
 
@@ -402,7 +571,7 @@
           if (r.ok) {
             card.remove();                          // some (o modelo continua no painel)
             ajustarContador(turmaId, -1);
-            toast('Encontro removido.', 'ok');
+            toast('Disciplina removida do horário.', 'ok');
           } else {
             toast('Falha ao remover.', 'erro');
             origem.appendChild(card);               // rollback para a grade
