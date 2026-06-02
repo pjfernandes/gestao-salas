@@ -72,9 +72,10 @@
     const t = document.getElementById('toast');
     t.textContent = msg;
     t.className = 'no-print fixed bottom-6 right-6 max-w-sm px-4 py-3 rounded-lg shadow-lg text-sm ' +
-      (tipo === 'erro'  ? 'bg-red-600 text-white' :
-       tipo === 'ok'    ? 'bg-emerald-600 text-white' :
-                          'bg-slate-800 text-white');
+      (tipo === 'erro' ? 'bg-red-600 text-white' :
+        tipo === 'ok' ? 'bg-emerald-600 text-white' :
+          tipo === 'aviso' ? 'bg-amber-500 text-white' :
+            'bg-slate-800 text-white');
     t.classList.remove('hidden');
     clearTimeout(window.__toast_t);
     window.__toast_t = setTimeout(() => t.classList.add('hidden'), 3200);

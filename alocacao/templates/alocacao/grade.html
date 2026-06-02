@@ -490,11 +490,7 @@
         document.querySelectorAll('.drop-zone').forEach(d => d.classList.remove('over', 'invalid'));
         const zona = evt.to;
         if (zona && zona.classList.contains('drop-zone')) {
-          const card = evt.dragged;
-          const alunos = parseInt(card.dataset.alunos || '0', 10);
-          const cap = parseInt(zona.dataset.cap, 10);
-          const invalido = (alunos > cap);
-          zona.classList.add(invalido ? 'invalid' : 'over');
+          zona.classList.add('over');
         }
       },
       async onEnd(evt) {
@@ -540,7 +536,11 @@
           card.dataset.alocacao = data.alocacao_id;
           card.querySelector('.contador')?.remove(); // badge é só do painel
           ajustarContador(turmaId, +1);
-          toast('Disciplina adicionada.', 'ok');
+          if (data.avisos && data.avisos.length) {
+            toast(data.avisos.join(' '), 'aviso');
+          } else {
+            toast('Disciplina adicionada.', 'ok');
+          }
           return;
         }
 
@@ -560,7 +560,11 @@
             return;
           }
           card.dataset.alocacao = data.alocacao_id;
-          toast('Alocação atualizada.', 'ok');
+          if (data.avisos && data.avisos.length) {
+            toast(data.avisos.join(' '), 'aviso');
+          } else {
+            toast('Alocação atualizada.', 'ok');
+          }
           return;
         }
 

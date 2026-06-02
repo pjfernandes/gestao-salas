@@ -37,16 +37,29 @@ def _intervalos_se_sobrepoem(a_ini, a_fim, b_ini, b_fim):
 
 
 def _validar_alocacao(turma, sala, dia, hora_inicio, hora_fim, ignorar_id=None):
-    """Aplica as regras de negócio. Retorna (ok, mensagem)."""
-    if sala is None:
-        return True, ''
+    """Aplica as regras de negócio.
 
+    Retorna (ok, erro, avisos):
+      - ok=False + erro: bloqueio rígido (conflito de sala/horário).
+      - ok=True + avisos: avisos NÃO bloqueantes (capacidade, laboratório).
+    """
+    avisos = []
+    if sala is None:
+        return True, '', avisos
+
+    # --- Avisos não-bloqueantes ---
     if sala.capacidade < turma.num_alunos:
-        return False, (
-            f'A sala {sala.numero}-{sala.bloco} comporta {sala.capacidade} alunos, '
-            f'mas a turma tem {turma.num_alunos}.'
+        avisos.append(
+            f'Atenção: a sala {sala.numero}-{sala.bloco} comporta {sala.capacidade} '
+            f'alunos, mas a turma tem {turma.num_alunos}.'
+        )
+    if turma.exige_laboratorio and not sala.eh_laboratorio:
+        avisos.append(
+            f'Atenção: a turma pede laboratório, mas {sala.numero}-{sala.bloco} '
+            f'não é laboratório.'
         )
 
+    # --- Bloqueio rígido: conflito de horário na mesma sala ---
     conflitantes = Alocacao.objects.filter(sala=sala, dia_semana=dia)
     if ignorar_id:
         conflitantes = conflitantes.exclude(pk=ignorar_id)
@@ -55,9 +68,9 @@ def _validar_alocacao(turma, sala, dia, hora_inicio, hora_fim, ignorar_id=None):
             return False, (
                 f'Sala já ocupada por "{outra.turma.nome_disciplina}" '
                 f'({outra.turma.codigo_turma}) das {outra.hora_inicio} às {outra.hora_fim}.'
-            )
+            ), avisos
 
-    return True, ''
+    return True, '', avisos
 
 def _sugerir_sala(turma, dia, hora_inicio, hora_fim, bloco=None):
     qs = Sala.objects.all()
@@ -68,7 +81,7 @@ def _sugerir_sala(turma, dia, hora_inicio, hora_fim, bloco=None):
     qs = qs.filter(capacidade__gte=turma.num_alunos).order_by('capacidade')
 
     for sala in qs:
-        ok, _ = _validar_alocacao(turma, sala, dia, hora_inicio, hora_fim)
+        ok, _, _ = _validar_alocacao(turma, sala, dia, hora_inicio, hora_fim)
         if ok:
             return sala
     return None
@@ -196,7 +209,7 @@ def api_mover(request):
         aloc = None
         ignorar = None
 
-    ok, msg = _validar_alocacao(turma, sala, dia, hi, hf, ignorar_id=ignorar)
+    ok, msg, avisos = _validar_alocacao(turma, sala, dia, hi, hf, ignorar_id=ignorar)
     if not ok:
         return JsonResponse({'ok': False, 'erro': msg}, status=400)
 
@@ -212,7 +225,7 @@ def api_mover(request):
             hora_inicio=hi, hora_fim=hf,
         )
 
-    return JsonResponse({'ok': True, 'alocacao_id': aloc.id})
+    return JsonResponse({'ok': True, 'alocacao_id': aloc.id, 'avisos': avisos})
 
 
 @api_login_required
@@ -309,8 +322,8 @@ def turma_editar(request, pk):
     for a in t.alocacoes.select_related('sala').all():
         if a.sala is None:
             continue
-        ok, _ = _validar_alocacao(t, a.sala, a.dia_semana, a.hora_inicio, a.hora_fim,
-                                  ignorar_id=a.id)
+        ok, _, _ = _validar_alocacao(t, a.sala, a.dia_semana, a.hora_inicio, a.hora_fim,
+                                     ignorar_id=a.id)
         if not ok:
             a.sala = None
             a.save()
