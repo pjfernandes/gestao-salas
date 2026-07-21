@@ -15,12 +15,9 @@
   <section class="mb-6 quadro-print">
     <h2 class="text-base font-bold mb-2 text-slate-900 text-center">
       INSTITUTO DE GEOCIÊNCIAS — Bloco {{ bloco }} — {{ quadro.dia|upper }} — 1º Semestre 2026
-      {% if quadro.partes > 1 %}
-      <span class="font-normal text-slate-600">
-        (salas {% with s1=quadro.salas|first s2=quadro.salas|last %}{{ s1.numero }}-{{ s1.bloco }} a {{ s2.numero }}-{{
-        s2.bloco }} — parte {{ quadro.parte }}/{{ quadro.partes }}{% endwith %})
-      </span>
-      {% endif %}
+        {% if quadro.partes > 1 %}
+        <span class="font-normal text-slate-600">(parte {{ quadro.parte }}/{{ quadro.partes }})</span>
+        {% endif %}
     </h2>
     <table class="quadro-tabela w-full border-collapse table-fixed" style="font-size: 10pt">
       <thead>
