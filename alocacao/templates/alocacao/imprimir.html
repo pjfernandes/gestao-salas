@@ -66,29 +66,58 @@
     margin-left: auto;
     margin-right: auto;
   }
-
-  /* Altura MÍNIMA uniforme das linhas (7 faixas x 2,3cm = 16,1cm).
-     Linhas com muito conteúdo podem crescer além — nada é cortado. */
-  .quadro-tabela tbody tr {
-    height: 2.3cm;
-  }
 </style>
 
 <script>
-  // Auto-ajuste: cada quadro recebe a MAIOR fonte que cabe numa página.
-  // Começa em 10pt e reduz 0,5pt por vez até a tabela caber na altura útil
-  // (A4 paisagem: ~19cm úteis, menos título => ~17,6cm para a tabela).
+  // ---------------------------------------------------------------------
+  // Ajuste automático de cada quadro para caber em UMA página A4 paisagem.
+  //   1) acha a maior fonte em que o quadro inteiro cabe;
+  //   2) distribui a altura que sobrou igualmente entre as linhas,
+  //      formando uma grade uniforme que preenche a página.
+  // ---------------------------------------------------------------------
+  function pxPorCm() {
+    const d = document.createElement('div');
+    d.style.cssText = 'height:10cm;position:absolute;visibility:hidden;top:-9999px';
+    document.body.appendChild(d);
+    const px = d.offsetHeight / 10;
+    d.remove();
+    return px || (96 / 2.54);
+  }
+
   function ajustarQuadros() {
-    const LIMITE_PX = 17.6 * 96 / 2.54;   // cm -> px CSS (96dpi)
-    document.querySelectorAll('.quadro-tabela').forEach(tb => {
+    const CM = pxPorCm();
+    const UTIL = 18.4 * CM;   // 21cm - 2cm de margem, menos folga de segurança
+
+    document.querySelectorAll('.quadro-print').forEach(sec => {
+      const tb = sec.querySelector('.quadro-tabela');
+      if (!tb) return;
+      const linhas = tb.querySelectorAll('tbody tr');
+      if (!linhas.length) return;
+
+      // (0) estado limpo: sem alturas impostas
+      linhas.forEach(tr => { tr.style.height = ''; });
+
+      // (1) maior fonte em que a SECTION inteira (título + tabela) cabe
       let f = 10;
       tb.style.fontSize = f + 'pt';
-      while (f > 5 && tb.offsetHeight > LIMITE_PX) {
+      while (f > 4.5 && sec.offsetHeight > UTIL) {
         f -= 0.5;
         tb.style.fontSize = f + 'pt';
       }
+
+      // (2) distribui a sobra: cada linha recebe no mínimo a cota uniforme
+      const sobra = UTIL - sec.offsetHeight;
+      if (sobra > 0) {
+        const cota = (tb.querySelector('tbody').offsetHeight + sobra) / linhas.length;
+        linhas.forEach(tr => { tr.style.height = cota + 'px'; });
+        // se a distribuição estourou (linha cheia cresceu), desfaz
+        if (sec.offsetHeight > UTIL) {
+          linhas.forEach(tr => { tr.style.height = ''; });
+        }
+      }
     });
   }
+
   window.addEventListener('load', ajustarQuadros);
   window.addEventListener('beforeprint', ajustarQuadros);
 </script>
