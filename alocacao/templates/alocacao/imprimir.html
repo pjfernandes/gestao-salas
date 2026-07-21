@@ -83,31 +83,38 @@
 
   function ajustarQuadros() {
     const CM = pxPorCm();
-    const UTIL = 17.2 * CM;   // 21cm - 2cm de margem, menos folga de segurança
+    const UTIL = 17.2 * CM;   // folga para cabeçalho/rodapé do navegador na impressão
 
-    document.querySelectorAll('.quadro-print').forEach(sec => {
+    const secs = Array.from(document.querySelectorAll('.quadro-print'));
+
+    // Passo 1: descobre a fonte necessária de cada quadro e guarda a MENOR,
+    // para que todas as páginas saiam no mesmo tamanho (uniforme).
+    let fGlobal = 10;
+    secs.forEach(sec => {
       const tb = sec.querySelector('.quadro-tabela');
       if (!tb) return;
-      const linhas = tb.querySelectorAll('tbody tr');
-      if (!linhas.length) return;
-
-      // (0) estado limpo: sem alturas impostas
-      linhas.forEach(tr => { tr.style.height = ''; });
-
-      // (1) maior fonte em que a SECTION inteira (título + tabela) cabe
+      tb.querySelectorAll('tbody tr').forEach(tr => { tr.style.height = ''; });
       let f = 10;
       tb.style.fontSize = f + 'pt';
       while (f > 4.5 && sec.offsetHeight > UTIL) {
         f -= 0.5;
         tb.style.fontSize = f + 'pt';
       }
+      if (f < fGlobal) fGlobal = f;
+    });
 
-      // (2) distribui a sobra: cada linha recebe no mínimo a cota uniforme
+    // Passo 2: aplica a fonte única e distribui a sobra de altura nas linhas.
+    secs.forEach(sec => {
+      const tb = sec.querySelector('.quadro-tabela');
+      if (!tb) return;
+      const linhas = tb.querySelectorAll('tbody tr');
+      if (!linhas.length) return;
+      tb.style.fontSize = fGlobal + 'pt';
+      linhas.forEach(tr => { tr.style.height = ''; });
       const sobra = UTIL - sec.offsetHeight;
       if (sobra > 0) {
         const cota = (tb.querySelector('tbody').offsetHeight + sobra) / linhas.length;
         linhas.forEach(tr => { tr.style.height = cota + 'px'; });
-        // se a distribuição estourou (linha cheia cresceu), desfaz
         if (sec.offsetHeight > UTIL) {
           linhas.forEach(tr => { tr.style.height = ''; });
         }
