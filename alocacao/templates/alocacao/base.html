@@ -37,19 +37,12 @@
     .no-print { display: none !important; }
     body { font-size: 10pt; background: #fff !important; }
 
-    /* cada quadro (dia) ocupa uma folha, sem estourar para a próxima */
+    /* cada quadro (dia) começa em folha própria */
     .quadro-print {
       page-break-after: always;
       break-inside: avoid;
-      height: 18cm;              /* A4 paisagem (~19cm úteis) menos o título */
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
     }
     .quadro-print:last-child { page-break-after: auto; }
-
-    /* a tabela estica para preencher a altura do quadro */
-    .quadro-print table { flex: 1 1 auto; height: 100%; }
 
     /* não deixar linha/célula se partir entre páginas */
     .quadro-print tr, .quadro-print td, .quadro-print th { break-inside: avoid; }

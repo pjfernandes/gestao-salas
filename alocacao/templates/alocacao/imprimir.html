@@ -15,13 +15,19 @@
   <section class="mb-6 quadro-print">
     <h2 class="text-base font-bold mb-2 text-slate-900 text-center">
       INSTITUTO DE GEOCIÊNCIAS — Bloco {{ bloco }} — {{ quadro.dia|upper }} — 1º Semestre 2026
+      {% if quadro.partes > 1 %}
+      <span class="font-normal text-slate-600">
+        (salas {% with s1=quadro.salas|first s2=quadro.salas|last %}{{ s1.numero }}-{{ s1.bloco }} a {{ s2.numero }}-{{
+        s2.bloco }} — parte {{ quadro.parte }}/{{ quadro.partes }}{% endwith %})
+      </span>
+      {% endif %}
     </h2>
-    <table class="w-full border-collapse text-[10pt] table-fixed">
+    <table class="quadro-tabela w-full border-collapse table-fixed" style="font-size: 10pt">
       <thead>
         <tr class="bg-slate-200">
-          <th class="border border-slate-400 px-1 py-1 w-20 text-center">Hora</th>
-          {% for s in salas %}
-          <th class="border border-slate-400 px-1 py-1 text-center">
+          <th class="border border-slate-400 px-0.5 py-0.5 text-center" style="width: 3.2em">Hora</th>
+          {% for s in quadro.salas %}
+          <th class="border border-slate-400 px-0.5 py-0.5 text-center">
             {{ s.numero }}-{{ s.bloco }}
           </th>
           {% endfor %}
@@ -30,15 +36,15 @@
       <tbody>
         {% for linha in quadro.linhas %}
         <tr>
-          <td class="border border-slate-400 text-center font-mono text-[9pt] bg-slate-200">
+          <td class="border border-slate-400 text-center font-mono text-[0.9em] bg-slate-200">
             {{ linha.inicio }}<br>{{ linha.fim }}
           </td>
           {% for c in linha.celulas %}
-          <td class="border border-slate-400 align-middle text-center p-1">
+          <td class="border border-slate-400 align-middle text-center p-0.5">
             {% for a in c.alocacoes %}
             <div class="leading-tight mb-1">
-              <div class="font-semibold hyphens-auto">{{ a.turma.nome_disciplina }}</div>
-              <div class="text-[9pt] break-words">{{ a.turma.codigo_turma }} — {{ a.turma.professor }}</div>
+              <div class="font-semibold hyphens-auto break-words{% if a.turma.nome_disciplina|length > 32 %} text-[0.82em]{% endif %}">{{ a.turma.nome_disciplina }}</div>
+              <div class="text-[0.85em] break-words">{{ a.turma.codigo_turma }} — {{ a.turma.professor }}</div>
             </div>
             {% endfor %}
           </td>
@@ -50,4 +56,40 @@
   </section>
   {% endfor %}
 </div>
+
+<style>
+  /* Largura igual à área útil do A4 paisagem (29,7cm - 2x1cm de margem),
+     para que a medição na tela corresponda ao papel. */
+  .quadro-print {
+    width: 27.7cm;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Altura MÍNIMA uniforme das linhas (7 faixas x 2,3cm = 16,1cm).
+     Linhas com muito conteúdo podem crescer além — nada é cortado. */
+  .quadro-tabela tbody tr {
+    height: 2.3cm;
+  }
+</style>
+
+<script>
+  // Auto-ajuste: cada quadro recebe a MAIOR fonte que cabe numa página.
+  // Começa em 10pt e reduz 0,5pt por vez até a tabela caber na altura útil
+  // (A4 paisagem: ~19cm úteis, menos título => ~17,6cm para a tabela).
+  function ajustarQuadros() {
+    const LIMITE_PX = 17.6 * 96 / 2.54;   // cm -> px CSS (96dpi)
+    document.querySelectorAll('.quadro-tabela').forEach(tb => {
+      let f = 10;
+      tb.style.fontSize = f + 'pt';
+      while (f > 5 && tb.offsetHeight > LIMITE_PX) {
+        f -= 0.5;
+        tb.style.fontSize = f + 'pt';
+      }
+    });
+  }
+  window.addEventListener('load', ajustarQuadros);
+  window.addEventListener('beforeprint', ajustarQuadros);
+</script>
 {% endblock %}

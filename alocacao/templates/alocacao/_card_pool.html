@@ -18,7 +18,7 @@
   </div>
   {% endif %}
 
-  <div class="font-semibold leading-tight pr-10 pl-4">{{ t.nome_disciplina }}</div>
+<div class="font-semibold leading-tight break-words pr-10 pl-4">{{ t.nome_disciplina }}</div>
   <div class="flex justify-between mt-0.5 text-[10px] opacity-80">
     <span>{{ t.codigo_turma }} • {{ t.professor|default:"—" }}</span>
     <span>{{ t.num_alunos }}{% if t.exige_laboratorio %} 💻{% endif %}</span>

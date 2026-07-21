@@ -157,6 +157,17 @@ def imprimir(request):
     bloco = request.GET.get('bloco', 'O')
     salas = list(Sala.objects.filter(bloco=bloco))
 
+    # Padrão: todas as salas na mesma página (fonte se ajusta sozinha no template).
+    # Plano B: dividir em páginas com ?colunas=N (ex.: ?colunas=7).
+    colunas = request.GET.get('colunas')
+    try:
+        por_pagina = int(colunas) if colunas else 0
+    except (TypeError, ValueError):
+        por_pagina = 0
+    if por_pagina < 1:
+        por_pagina = len(salas) or 1
+    grupos = [salas[i:i + por_pagina] for i in range(0, len(salas), por_pagina)] or [[]]
+
     quadros = []
     for dia_num, dia_nome in DIAS_SEMANA:
         alocs = (Alocacao.objects
@@ -166,20 +177,26 @@ def imprimir(request):
         for a in alocs:
             mapa.setdefault((a.sala_id, a.hora_inicio), []).append(a)
 
-        linhas = []
-        for ini, fim in FAIXAS_HORARIO:
-            celulas = []
-            for sala in salas:
-                celulas.append({
-                    'sala': sala,
-                    'alocacoes': mapa.get((sala.id, ini), []),
-                })
-            linhas.append({'inicio': ini, 'fim': fim, 'celulas': celulas})
-        quadros.append({'dia': dia_nome, 'linhas': linhas})
+        for gi, grupo in enumerate(grupos):
+            linhas = []
+            for ini, fim in FAIXAS_HORARIO:
+                celulas = []
+                for sala in grupo:
+                    celulas.append({
+                        'sala': sala,
+                        'alocacoes': mapa.get((sala.id, ini), []),
+                    })
+                linhas.append({'inicio': ini, 'fim': fim, 'celulas': celulas})
+            quadros.append({
+                'dia': dia_nome,
+                'salas': grupo,
+                'parte': gi + 1,
+                'partes': len(grupos),
+                'linhas': linhas,
+            })
 
     return render(request, 'alocacao/imprimir.html', {
         'bloco': bloco,
-        'salas': salas,
         'quadros': quadros,
     })
 

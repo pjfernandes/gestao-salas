@@ -15,7 +15,7 @@
   </div>
   {% endif %}
 
-  <div class="font-semibold leading-tight truncate pr-10">{{ a.turma.nome_disciplina }}</div>
+  <div class="font-semibold leading-tight break-words pr-10">{{ a.turma.nome_disciplina }}</div>
   <div class="aloc-meta text-[10px] opacity-80 flex justify-between">
     <span>{{ a.turma.codigo_turma }} • {{ a.turma.professor|default:"—" }}</span>
     <span>{{ a.turma.num_alunos }}{% if a.turma.exige_laboratorio %} 💻{% endif %}</span>
