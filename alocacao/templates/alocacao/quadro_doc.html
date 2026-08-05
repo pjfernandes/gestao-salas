@@ -8,14 +8,18 @@
 <w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument>
 </xml><![endif]-->
 <style>
-  @page { size: 29.7cm 21cm; mso-page-orientation: landscape; margin: 1cm; }
+  @page { size: 29.7cm 21cm; mso-page-orientation: landscape;
+          margin: 1cm 1cm 1cm 1cm; }
   body  { font-family: Calibri, Arial, sans-serif; font-size: 8pt; }
-  h2    { font-size: 11pt; text-align: center; margin: 0 0 6pt 0; }
+  h2    { font-size: 11pt; font-weight: bold; text-align: center;
+          margin: 0cm 0cm 0.2cm 0cm; }
   table { border-collapse: collapse; width: 100%; table-layout: fixed; }
-  th, td { border: 0.5pt solid #666; padding: 2pt; text-align: center;
-           vertical-align: middle; word-wrap: break-word; }
-  th    { background: #d9d9d9; font-weight: bold; }
-  td.hora { background: #d9d9d9; font-weight: bold; width: 1.6cm; }
+  td, th { border: 0.75pt solid #808080; padding: 1pt 2pt;
+           text-align: center; vertical-align: middle;
+           word-wrap: break-word; overflow-wrap: break-word; }
+  th      { background: #E2E8F0; font-weight: bold; font-size: 8pt; }
+  td.hora { background: #E2E8F0; font-weight: bold;
+            font-family: Consolas, "Courier New", monospace; font-size: 7.5pt; }
   .disc { font-weight: bold; }
   .prof { font-size: 7pt; }
   .quebra { page-break-after: always; }
@@ -27,12 +31,12 @@
   <h2>INSTITUTO DE GEOCIÊNCIAS — Bloco {{ bloco }} — {{ quadro.dia|upper }} — {{ semestre }}{% if quadro.partes > 1 %} (parte {{ quadro.parte }}/{{ quadro.partes }}){% endif %}</h2>
   <table>
     <tr>
-      <th style="width:1.6cm">Hora</th>
+      <th style="width:1.5cm">Hora</th>
       {% for s in quadro.salas %}<th>{{ s.numero }}-{{ s.bloco }}</th>{% endfor %}
     </tr>
     {% for linha in quadro.linhas %}
-    <tr>
-      <td class="hora">{{ linha.inicio }}<br>{{ linha.fim }}</td>
+    <tr style="height:{{ altura_linha }}cm">
+      <td class="hora" style="width:1.5cm">{{ linha.inicio }}<br>{{ linha.fim }}</td>
       {% for c in linha.celulas %}
       <td>
         {% for a in c.alocacoes %}
