@@ -1,0 +1,50 @@
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="utf-8">
+<title>Quadro — Bloco {{ bloco }}</title>
+<!--[if gte mso 9]><xml>
+<w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument>
+</xml><![endif]-->
+<style>
+  @page { size: 29.7cm 21cm; mso-page-orientation: landscape; margin: 1cm; }
+  body  { font-family: Calibri, Arial, sans-serif; font-size: 8pt; }
+  h2    { font-size: 11pt; text-align: center; margin: 0 0 6pt 0; }
+  table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+  th, td { border: 0.5pt solid #666; padding: 2pt; text-align: center;
+           vertical-align: middle; word-wrap: break-word; }
+  th    { background: #d9d9d9; font-weight: bold; }
+  td.hora { background: #d9d9d9; font-weight: bold; width: 1.6cm; }
+  .disc { font-weight: bold; }
+  .prof { font-size: 7pt; }
+  .quebra { page-break-after: always; }
+</style>
+</head>
+<body>
+{% for quadro in quadros %}
+<div{% if not forloop.last %} class="quebra"{% endif %}>
+  <h2>INSTITUTO DE GEOCIÊNCIAS — Bloco {{ bloco }} — {{ quadro.dia|upper }} — {{ semestre }}{% if quadro.partes > 1 %} (parte {{ quadro.parte }}/{{ quadro.partes }}){% endif %}</h2>
+  <table>
+    <tr>
+      <th style="width:1.6cm">Hora</th>
+      {% for s in quadro.salas %}<th>{{ s.numero }}-{{ s.bloco }}</th>{% endfor %}
+    </tr>
+    {% for linha in quadro.linhas %}
+    <tr>
+      <td class="hora">{{ linha.inicio }}<br>{{ linha.fim }}</td>
+      {% for c in linha.celulas %}
+      <td>
+        {% for a in c.alocacoes %}
+        <div class="disc">{{ a.turma.nome_disciplina }}</div>
+        <div class="prof">{{ a.turma.codigo_turma }} — {{ a.turma.professor }}</div>
+        {% endfor %}
+      </td>
+      {% endfor %}
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endfor %}
+</body>
+</html>
