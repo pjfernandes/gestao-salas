@@ -8,7 +8,18 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 
+from django.utils import timezone
+
 from .models import Sala, Turma, Alocacao, DIAS_SEMANA, FAIXAS_HORARIO
+
+
+def _dia_de_hoje():
+    """Dia da semana de hoje no formato do quadro (1=Segunda .. 6=Sábado).
+
+    Domingo (isoweekday 7) não existe no quadro; nesse caso volta Segunda.
+    """
+    hoje = timezone.localdate().isoweekday()
+    return hoje if hoje <= 6 else 1
 
 
 def api_login_required(view):
@@ -95,7 +106,14 @@ def _sugerir_sala(turma, dia, hora_inicio, hora_fim, bloco=None):
 def grade(request):
     """Tela principal: grade visual interativa."""
     bloco = request.GET.get('bloco', 'O')
-    dia = int(request.GET.get('dia', 1))
+
+    # Sem ?dia= na URL, abre no dia de hoje (domingo cai em segunda).
+    try:
+        dia = int(request.GET.get('dia', ''))
+    except (TypeError, ValueError):
+        dia = 0
+    if dia not in dict(DIAS_SEMANA):
+        dia = _dia_de_hoje()
 
     salas = list(Sala.objects.filter(bloco=bloco))
     alocacoes = (Alocacao.objects
