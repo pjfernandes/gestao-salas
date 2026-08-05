@@ -233,7 +233,8 @@ def baixar_doc(request):
     # Altura uniforme das linhas: divide a área útil da folha (A4 paisagem,
     # ~17,5cm depois do título) pelo número de faixas de horário.
     n_linhas = len(FAIXAS_HORARIO) or 1
-    altura_linha = round(17.5 / n_linhas, 2)
+    # string com ponto: evita que o locale pt-br escreva "2,5" (CSS exige ponto)
+    altura_linha = f'{17.5 / n_linhas:.2f}'
 
     html = render_to_string('alocacao/quadro_doc.html', {
         'bloco': bloco,
