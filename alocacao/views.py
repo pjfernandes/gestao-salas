@@ -234,7 +234,7 @@ def baixar_doc(request):
     # ~17,5cm depois do título) pelo número de faixas de horário.
     n_linhas = len(FAIXAS_HORARIO) or 1
     # string com ponto: evita que o locale pt-br escreva "2,5" (CSS exige ponto)
-    altura_linha = f'{17.5 / n_linhas:.2f}'
+    altura_linha = f'{16.9 / n_linhas:.2f}'   # 19cm úteis - título - linha de cabeçalho
 
     html = render_to_string('alocacao/quadro_doc.html', {
         'bloco': bloco,
