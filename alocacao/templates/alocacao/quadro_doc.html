@@ -32,12 +32,12 @@
 <div{% if not forloop.last %} class="quebra"{% endif %}>
   <h2>INSTITUTO DE GEOCIÊNCIAS — Bloco {{ bloco }} — {{ quadro.dia|upper }} — {{ semestre }}{% if quadro.partes > 1 %} (parte {{ quadro.parte }}/{{ quadro.partes }}){% endif %}</h2>
   <table>
-    <tr>
-      <th bgcolor="#E2E8F0" style="width:1.5cm; background:#E2E8F0">Hora</th>
+    <tr style="height:0.8cm; mso-height-rule:exactly">
+        <th bgcolor="#E2E8F0" style="width:1.5cm; background:#E2E8F0">Hora</th>
       {% for s in quadro.salas %}<th bgcolor="#E2E8F0" style="background:#E2E8F0">{{ s.numero }}-{{ s.bloco }}</th>{% endfor %}
     </tr>
     {% for linha in quadro.linhas %}
-    <tr style="height:{{ altura_linha }}cm">
+    <tr style="height:{{ altura_linha }}cm; mso-height-rule:exactly">
       <td class="hora" bgcolor="#E2E8F0" style="width:1.5cm; background:#E2E8F0">{{ linha.inicio }}<br>{{ linha.fim }}</td>
       {% for c in linha.celulas %}
       <td>
