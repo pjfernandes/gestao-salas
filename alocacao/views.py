@@ -229,10 +229,17 @@ def baixar_doc(request):
     """Baixa o quadro como documento do Word (.doc)."""
     bloco, quadros = _montar_quadros(request)
     semestre = request.GET.get('semestre', '2º Semestre 2026')
+
+    # Altura uniforme das linhas: divide a área útil da folha (A4 paisagem,
+    # ~17,5cm depois do título) pelo número de faixas de horário.
+    n_linhas = len(FAIXAS_HORARIO) or 1
+    altura_linha = round(17.5 / n_linhas, 2)
+
     html = render_to_string('alocacao/quadro_doc.html', {
         'bloco': bloco,
         'quadros': quadros,
         'semestre': semestre,
+        'altura_linha': altura_linha,
     })
     resp = HttpResponse(html, content_type='application/msword; charset=utf-8')
     resp['Content-Disposition'] = f'attachment; filename="quadro-bloco-{bloco}.doc"'
