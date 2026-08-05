@@ -2,7 +2,8 @@
 import json
 from functools import wraps
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import JsonResponse, HttpResponseBadRequest
+from django.http import JsonResponse, HttpResponseBadRequest, HttpResponse
+from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST, require_GET
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.contrib.auth.decorators import login_required
@@ -171,7 +172,8 @@ def grade(request):
 
 
 @login_required
-def imprimir(request):
+def _montar_quadros(request):
+    """Monta a estrutura de quadros usada pela impressão e pelo download .doc."""
     bloco = request.GET.get('bloco', 'O')
     salas = list(Sala.objects.filter(bloco=bloco))
 
@@ -213,10 +215,28 @@ def imprimir(request):
                 'linhas': linhas,
             })
 
+    return bloco, quadros
+
+def imprimir(request):
+    bloco, quadros = _montar_quadros(request)
     return render(request, 'alocacao/imprimir.html', {
         'bloco': bloco,
         'quadros': quadros,
     })
+
+
+def baixar_doc(request):
+    """Baixa o quadro como documento do Word (.doc)."""
+    bloco, quadros = _montar_quadros(request)
+    semestre = request.GET.get('semestre', '2º Semestre 2026')
+    html = render_to_string('alocacao/quadro_doc.html', {
+        'bloco': bloco,
+        'quadros': quadros,
+        'semestre': semestre,
+    })
+    resp = HttpResponse(html, content_type='application/msword; charset=utf-8')
+    resp['Content-Disposition'] = f'attachment; filename="quadro-bloco-{bloco}.doc"'
+    return resp
 
 
 # ---------------------------------------------------------------------------

@@ -5,6 +5,7 @@ from . import views
 urlpatterns = [
     path('', views.grade, name='grade'),
     path('imprimir/', views.imprimir, name='imprimir'),
+    path('baixar-doc/', views.baixar_doc, name='baixar_doc'),
 
     # Login / logout
     path('login/', auth_views.LoginView.as_view(
